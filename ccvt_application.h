@@ -150,6 +150,7 @@ private:
     float m_var_N1;
     float m_var_N2;
 
+    std::vector<unsigned int> unif_locations;
 
     CCVT m_ccvt;
     unsigned m_size_density;

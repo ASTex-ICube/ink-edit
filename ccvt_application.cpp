@@ -267,23 +267,7 @@ bool ccvt_application::onInit() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-    unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes"); unif_locations.push_back(glGetUniformLocation(m_NoiseShaderProgram, "uRes");
-    glUniform1f(glGetUniformLocation(m_NoiseShaderProgram, "uFprinc"), freq_princ);
-    glUniform1f(glGetUniformLocation(m_NoiseShaderProgram, "uFspread"), freq_spread);
-    glUniform1f(glGetUniformLocation(m_NoiseShaderProgram, "uOprinc"), omega_princ);
-    glUniform1f(glGetUniformLocation(m_NoiseShaderProgram, "uOspread"), omega_spread);
-    glUniform1f(glGetUniformLocation(m_NoiseShaderProgram, "uSeed"), seed);
-
+    
 
     // fenêtre résultat
     window_creation(m_window_T, "composition", m_width_T, m_height_T);
@@ -305,49 +289,8 @@ bool ccvt_application::onInit() {
     display_quad(m_CompositionVAO);
 
     init_noise();
-    //// fbo noise 1
-    //if(!setFBO(m_fbo_N1, m_texture_N1, m_width_T, m_height_T)){
-    //    return false;
-    //}
-    //drawNoise(m_fbo_N1, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
-    //computeStatistiques(m_fbo_N1, m_width_T, m_height_T, m_mean_N1, m_var_N1);
-
-
-    //if(!setFBO(m_fbo_N1_ui, m_texture_N1_ui, m_width_N, m_height_N)){
-    //    return false;
-    //}
-    //drawNoise(m_fbo_N1_ui, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
-
-
-
-    //// fbo noise 2
-    //if(!setFBO(m_fbo_N2, m_texture_N2, m_width_T, m_height_T)){
-    //    return false;
-    //}
-    //drawNoise(m_fbo_N2, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
-    //computeStatistiques(m_fbo_N2, m_width_T, m_height_T, m_mean_N2, m_var_N2);
-
-    //if(!setFBO(m_fbo_N2_ui, m_texture_N2_ui, m_width_N, m_height_N)){
-    //    return false;
-    //}
-    //drawNoise(m_fbo_N2_ui, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
-
-
-
-    //// fbo color map
-    //if(!setFBO(m_fbo_H, m_texture_H, m_width_H, m_height_H)){
-    //    return false;
-    //}
-
-    //// fbo composition
-    //if(!setFBO(m_fbo_T, m_texture_T, m_width_T, m_height_T)){
-    //    return false;
-    //}
-    //computeProportions();
 
     initGui(m_window_T);
-
-
 
     return true;
 }
@@ -356,9 +299,6 @@ bool ccvt_application::onInit() {
 
 void ccvt_application::onFinish() {
     terminateGui();
-
-//    glDeleteVertexArrays(1, &m_PointsVAO);
-//    glDeleteProgram(m_PointsShaderProgram);
 
     glDeleteVertexArrays(1, &m_ColorVAO);
     glDeleteProgram(m_ColorShaderProgram);
@@ -369,7 +309,6 @@ void ccvt_application::onFinish() {
     glDeleteVertexArrays(1, &m_CompositionVAO);
     glDeleteProgram(m_CompositionShaderProgram);
 
-//    glfwDestroyWindow(m_window_H);
     glfwDestroyWindow(m_window_T);
     glfwTerminate();
 }
@@ -379,10 +318,8 @@ void ccvt_application::onFinish() {
 bool ccvt_application::isRunning() {
     // close the window when "escape" is press
     bool is_escape_pressed = glfwGetKey(m_window_T, GLFW_KEY_ESCAPE) == GLFW_PRESS;
-//                            or glfwGetKey(m_window_T, GLFW_KEY_ESCAPE) == GLFW_PRESS;
 
     if(is_escape_pressed){
-//        glfwSetWindowShouldClose(m_window_H, true);
         glfwSetWindowShouldClose(m_window_T, true);
     }
 
