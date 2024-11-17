@@ -43,14 +43,12 @@ set(SRCS main_ccvt_cgal.cpp
     imgui/imgui_impl_opengl3.cpp
     imgui/imgui_impl_glfw.cpp
     imgui/imgui.cpp
-    imgui/imgui_demo.cpp
     imgui/imgui_draw.cpp
     imgui/imgui_widgets.cpp
     imgui/imgui_tables.cpp
     #implot
     imgui/implot.cpp
     imgui/implot_items.cpp
-    imgui/implot_demo.cpp
     # ccvt
     ccvt_assign.cpp
     ccvt_energy.cpp
@@ -90,7 +88,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 # nice vs solution
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
-set(CMAKE_CONFIGURATION_TYPES "Release;Debug" CACHE STRING "" FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
 set(default_build_type "Release")
 set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
       STRING "Choose the type of build." FORCE)

@@ -70,7 +70,7 @@ std::string load_shader(const std::string& file_path){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool window_creation(GLFWwindow* &window, const char* name, int& width, int& height){
-    std::cout<<"creation window "<<name<<"..."<<std::endl;
+    //std::cout<<"creation window "<<name<<"..."<<std::endl;
 
     // fenêtre carte H
     window = glfwCreateWindow(width, height, name, NULL, NULL);
@@ -172,7 +172,13 @@ void shader_program(unsigned int & shaderProgram, std::string frag_shader, std::
 
 
 bool setFBO(unsigned int &fbo, unsigned int &texture, int width, int height){
-    // fbo noise 1
+    if (glIsTexture(texture))
+        glDeleteTextures(1,&texture);
+
+    if (glIsFramebuffer(texture))
+        glDeleteFramebuffers(1, &fbo);
+
+
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -196,9 +202,47 @@ bool setFBO(unsigned int &fbo, unsigned int &texture, int width, int height){
 }
 
 
+bool ccvt_application::init_noise() {
+    // fbo noise 1
+    if (!setFBO(m_fbo_N1, m_texture_N1, m_width_T, m_height_T)) {
+        return false;
+    }
+    drawNoise(m_fbo_N1, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
+    computeStatistiques(m_fbo_N1, m_width_T, m_height_T, m_mean_N1, m_var_N1);
+
+
+    if (!setFBO(m_fbo_N1_ui, m_texture_N1_ui, m_width_N, m_height_N)) {
+        return false;
+    }
+    drawNoise(m_fbo_N1_ui, m_width_N, m_height_N, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
 
 
 
+    // fbo noise 2
+    if (!setFBO(m_fbo_N2, m_texture_N2, m_width_T, m_height_T)) {
+        return false;
+    }
+    drawNoise(m_fbo_N2, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
+    computeStatistiques(m_fbo_N2, m_width_T, m_height_T, m_mean_N2, m_var_N2);
+
+    if (!setFBO(m_fbo_N2_ui, m_texture_N2_ui, m_width_N, m_height_N)) {
+        return false;
+    }
+    drawNoise(m_fbo_N2_ui, m_width_N, m_height_N, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
+
+
+
+    // fbo color map
+    if (!setFBO(m_fbo_H, m_texture_H, m_width_H, m_height_H)) {
+        return false;
+    }
+
+    // fbo composition
+    if (!setFBO(m_fbo_T, m_texture_T, m_width_T, m_height_T)) {
+        return false;
+    }
+    computeProportions();
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool ccvt_application::onInit() {
@@ -222,14 +266,18 @@ bool ccvt_application::onInit() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-
-
-
+    //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    
 
     // fenêtre résultat
     window_creation(m_window_T, "composition", m_width_T, m_height_T);
+    glfwSetWindowUserPointer(m_window_T, this);
+    glfwSetWindowSizeCallback(m_window_T, [](GLFWwindow* wi, int, int)
+        {
+            ccvt_application* that = static_cast<ccvt_application*>(glfwGetWindowUserPointer(wi));
+            glfwGetFramebufferSize(wi, &(that->m_width_T), &(that->m_height_T));
+            that->init_noise();
+        });
 
     shader_program(m_NoiseShaderProgram, TEMPO_PATH+"shaders/noise_shader.frag", TEMPO_PATH+"shaders/identity_shader.vert");
     display_quad(m_NoiseVAO);
@@ -240,50 +288,9 @@ bool ccvt_application::onInit() {
     shader_program(m_CompositionShaderProgram, TEMPO_PATH+"shaders/composition_shader.frag", TEMPO_PATH+"shaders/identity_shader.vert");
     display_quad(m_CompositionVAO);
 
-
-    // fbo noise 1
-    if(!setFBO(m_fbo_N1, m_texture_N1, m_width_T, m_height_T)){
-        return false;
-    }
-    drawNoise(m_fbo_N1, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
-    computeStatistiques(m_fbo_N1, m_width_T, m_height_T, m_mean_N1, m_var_N1);
-
-
-    if(!setFBO(m_fbo_N1_ui, m_texture_N1_ui, m_width_N, m_height_N)){
-        return false;
-    }
-    drawNoise(m_fbo_N1_ui, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
-
-
-
-    // fbo noise 2
-    if(!setFBO(m_fbo_N2, m_texture_N2, m_width_T, m_height_T)){
-        return false;
-    }
-    drawNoise(m_fbo_N2, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
-    computeStatistiques(m_fbo_N2, m_width_T, m_height_T, m_mean_N2, m_var_N2);
-
-    if(!setFBO(m_fbo_N2_ui, m_texture_N2_ui, m_width_N, m_height_N)){
-        return false;
-    }
-    drawNoise(m_fbo_N2_ui, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
-
-
-
-    // fbo color map
-    if(!setFBO(m_fbo_H, m_texture_H, m_width_H, m_height_H)){
-        return false;
-    }
-
-    // fbo composition
-    if(!setFBO(m_fbo_T, m_texture_T, m_width_T, m_height_T)){
-        return false;
-    }
-    computeProportions();
+    init_noise();
 
     initGui(m_window_T);
-
-
 
     return true;
 }
@@ -292,9 +299,6 @@ bool ccvt_application::onInit() {
 
 void ccvt_application::onFinish() {
     terminateGui();
-
-//    glDeleteVertexArrays(1, &m_PointsVAO);
-//    glDeleteProgram(m_PointsShaderProgram);
 
     glDeleteVertexArrays(1, &m_ColorVAO);
     glDeleteProgram(m_ColorShaderProgram);
@@ -305,7 +309,6 @@ void ccvt_application::onFinish() {
     glDeleteVertexArrays(1, &m_CompositionVAO);
     glDeleteProgram(m_CompositionShaderProgram);
 
-//    glfwDestroyWindow(m_window_H);
     glfwDestroyWindow(m_window_T);
     glfwTerminate();
 }
@@ -315,10 +318,8 @@ void ccvt_application::onFinish() {
 bool ccvt_application::isRunning() {
     // close the window when "escape" is press
     bool is_escape_pressed = glfwGetKey(m_window_T, GLFW_KEY_ESCAPE) == GLFW_PRESS;
-//                            or glfwGetKey(m_window_T, GLFW_KEY_ESCAPE) == GLFW_PRESS;
 
     if(is_escape_pressed){
-//        glfwSetWindowShouldClose(m_window_H, true);
         glfwSetWindowShouldClose(m_window_T, true);
     }
 
@@ -343,22 +344,19 @@ void ccvt_application::onFrame() {
     //////////////////////////////////////
     if(m_n1_changed){
         drawNoise(m_fbo_N1, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
-        drawNoise(m_fbo_N1_ui, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
+        drawNoise(m_fbo_N1_ui, m_width_N, m_height_N, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
+
         m_n1_changed = false;
     }
 
 
     // noise 2
     //////////////////////////////////////
-    if(m_n2_changed)
-    {
+    if(m_n2_changed){
         drawNoise(m_fbo_N2, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
-        drawNoise(m_fbo_N2_ui, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
+        drawNoise(m_fbo_N2_ui, m_width_N, m_height_N, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
         m_n2_changed = false;
     }
-
-
-
 
     // color map
     //////////////////////////////////////
@@ -512,6 +510,7 @@ bool ccvt_application::initGui(GLFWwindow* &window) {
     ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.IniFilename = NULL;
 
 // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
@@ -595,7 +594,11 @@ void ccvt_application::updateGui() {
     ImGui::NewFrame();
     // ImGui::ShowDemoWindow(); // Show demo window! :)
 
+    int win_w, win_h;
+    glfwGetWindowSize(m_window_T, &win_w, &win_h);
 
+    ImGui::SetNextWindowSize(ImVec2(0,0));
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
     ImGui::Begin("Performances");
     ImGuiIO& io = ImGui::GetIO();
     ImGui::Text("Application average %.3f ms/frame", 1000.0f / io.Framerate);
@@ -603,7 +606,9 @@ void ccvt_application::updateGui() {
     ImGui::End();
 
 
-    ImGui::Begin("Infos");
+    ImGui::Begin("Infos",nullptr);
+    ImGui::SetWindowSize({ 0,0 });
+    ImGui::SetWindowPos({ 10,90 }, ImGuiCond_Once);
     if(ImGui::Button("Statistiques noises")){
         computeStatistiques(m_fbo_N1, m_width_T, m_height_T, m_mean_N1, m_var_N1);
         computeStatistiques(m_fbo_N2, m_width_T, m_height_T, m_mean_N2, m_var_N2);
@@ -676,13 +681,9 @@ void ccvt_application::updateGui() {
     ImGui::Text(m_infoBuffer.c_str());
     ImGui::End();
 
-
-
-
-
-
+    ImGui::SetNextWindowSize(ImVec2(0, 0));
+    ImGui::SetNextWindowPos({ 0.15f * win_w, 50 }, ImGuiCond_Once);
     ImGui::Begin("Color map");
-
     if(ImPlot::BeginPlot("map plot", ImVec2(m_width_H, m_height_H), ImPlotFlags_Equal | ImPlotFlags_NoLegend | ImPlotFlags_NoTitle))
     {
         ImPlot::SetupAxesLimits(0, 1, 0, 1, ImGuiCond_Always);
@@ -708,6 +709,7 @@ void ccvt_application::updateGui() {
             if(hovered)
             {
                 ImGui::BeginTooltip();
+                ImGui::SetWindowSize({ 0,0 });
                 ImGui::Text(("cell id : "+std::to_string(p-m_points.begin())).c_str());
                 ImGui::Text(("position : "+std::to_string((*p)._x) +", " + std::to_string((*p)._y)).c_str());
                 ImGui::EndTooltip();
@@ -836,17 +838,9 @@ void ccvt_application::updateGui() {
 
     ImGui::End();
 
-
-
-
-
-
-
-
-
-
-    ImGui::Begin("noise 1");
-
+    ImGui::SetNextWindowSize(ImVec2(0, 0));
+    ImGui::SetNextWindowPos({ 0.45f * win_w, 50 }, ImGuiCond_Once);
+    ImGui::Begin("noise 1",nullptr, ImGuiWindowFlags_NoResize);
     ImGui::SliderFloat("F_0", &m_F1Princ, 10., 60.);
     if(ImGui::IsItemEdited()){m_n1_changed = true;}
     ImGui::SliderFloat("F spread", &m_F1Spread, 0., 20.);
@@ -856,34 +850,12 @@ void ccvt_application::updateGui() {
     ImGui::SliderAngle("O spread", &m_Or1Spread, 0., 90.);
     if(ImGui::IsItemEdited()){m_n1_changed = true;}
 
-
-    // we access the ImGui window size
-    const float window_width_N1 = m_width_N;//ImGui::GetContentRegionAvail().x;
-    const float window_height_N1 = m_height_N;//ImGui::GetContentRegionAvail().y;
-
-//    glViewport(0, 0, window_width_N1, window_height_N1);
-
-    // we get the screen position of the window
-    ImVec2 pos_N1 = ImGui::GetCursorScreenPos();
-
-    // and here we can add our created texture as image to ImGui
-    // unfortunately we need to use the cast to void* or I didn't find another way tbh
-    ImGui::GetWindowDrawList()->AddImage(
-            (void *)m_texture_N1_ui,
-            ImVec2(pos_N1.x, pos_N1.y),
-            ImVec2(pos_N1.x + window_width_N1, pos_N1.y + window_height_N1),
-            ImVec2(0, 1),
-            ImVec2(1, 0)
-    );
+    ImGui::Image((ImTextureID)m_texture_N1_ui, ImVec2(m_width_N, m_height_N));
     ImGui::End();
 
-
-
-
-
-
-    ImGui::Begin("noise 2");
-
+    ImGui::SetNextWindowSize(ImVec2(0, 0));
+    ImGui::SetNextWindowPos({ 0.75f * win_w, 50 }, ImGuiCond_Once);
+    ImGui::Begin("noise 2", nullptr, ImGuiWindowFlags_NoResize);
     ImGui::SliderFloat("F_0", &m_F2Princ, 10., 60.);
     if(ImGui::IsItemEdited()){m_n2_changed = true;}
     ImGui::SliderFloat("F spread", &m_F2Spread, 0., 20.);
@@ -893,27 +865,8 @@ void ccvt_application::updateGui() {
     ImGui::SliderAngle("O spread", &m_Or2Spread, 0., 90.);
     if(ImGui::IsItemEdited()){m_n2_changed = true;}
 
-
-    // we access the ImGui window size
-    const float window_width_N2 = m_width_N;//ImGui::GetContentRegionAvail().x;
-    const float window_height_N2 = m_height_N;//ImGui::GetContentRegionAvail().y;
-
-//    glViewport(0, 0, window_width_N2, window_height_N2);
-
-    // we get the screen position of the window
-    ImVec2 pos_N2 = ImGui::GetCursorScreenPos();
-
-    // and here we can add our created texture as image to ImGui
-    // unfortunately we need to use the cast to void* or I didn't find another way tbh
-    ImGui::GetWindowDrawList()->AddImage(
-            (void *)m_texture_N2_ui,
-            ImVec2(pos_N2.x, pos_N2.y),
-            ImVec2(pos_N2.x + window_width_N2, pos_N2.y + window_height_N2),
-            ImVec2(0, 1),
-            ImVec2(1, 0)
-    );
+    ImGui::Image((ImTextureID)m_texture_N2_ui, ImVec2(m_width_N, m_height_N));
     ImGui::End();
-
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -1051,7 +1004,7 @@ void ccvt_application::optimizeCCVT(){
 
 
 void ccvt_application::updateCCVT(){
-    std::cout<<"update CCVT..."<<std::endl;
+    //std::cout<<"update CCVT..."<<std::endl;
 
     std::vector<Point> points;
     std::vector<double> weights;

@@ -67,6 +67,8 @@ public:
     }
 
 private:
+    bool init_noise();
+
     void drawNoise(unsigned int &fbo, float width, float height, float freq_princ, float freq_spread, float omega_princ, float omega_spread, float seed);
     void drawCM();
     void drawComposition();
@@ -116,29 +118,29 @@ private:
     int m_height_T = 900; 
 
 
-    unsigned int m_ColorShaderProgram;
-    unsigned int m_ColorVAO;
+    unsigned int m_ColorShaderProgram = 0;
+    unsigned int m_ColorVAO = 0;
 
-    unsigned int m_NoiseShaderProgram;
-    unsigned int m_NoiseVAO;
+    unsigned int m_NoiseShaderProgram = 0;
+    unsigned int m_NoiseVAO = 0;
 
-    unsigned int m_CompositionShaderProgram;
-    unsigned int m_CompositionVAO;
+    unsigned int m_CompositionShaderProgram = 0;
+    unsigned int m_CompositionVAO = 0;
 
-    unsigned int m_fbo_N1;
-    unsigned int m_texture_N1;
-    unsigned int m_fbo_N1_ui;
-    unsigned int m_texture_N1_ui;
+    unsigned int m_fbo_N1 = 0;
+    unsigned int m_texture_N1 = 0;
+    unsigned int m_fbo_N1_ui = 0;
+    unsigned int m_texture_N1_ui = 0;
 
-    unsigned int m_fbo_N2;
-    unsigned int m_texture_N2;
-    unsigned int m_fbo_N2_ui;
-    unsigned int m_texture_N2_ui;
+    unsigned int m_fbo_N2 = 0;
+    unsigned int m_texture_N2 = 0;
+    unsigned int m_fbo_N2_ui = 0;
+    unsigned int m_texture_N2_ui = 0;
 
-    unsigned int m_fbo_H;
-    unsigned int m_texture_H;
-    unsigned int m_fbo_T;
-    unsigned int m_texture_T;
+    unsigned int m_fbo_H = 0;
+    unsigned int m_texture_H = 0;
+    unsigned int m_fbo_T = 0;
+    unsigned int m_texture_T = 0;
 
     bool m_n1_changed = false;
     bool m_n2_changed = false;
@@ -148,6 +150,7 @@ private:
     float m_var_N1;
     float m_var_N2;
 
+    std::vector<unsigned int> unif_locations;
 
     CCVT m_ccvt;
     unsigned m_size_density;
