@@ -25,7 +25,7 @@ https://doi.org/10.1145/3681758.3697991
 code},
      author = {Grenier, Charline and Memari, Pooran and Sauvage, Basile},
      date = {2024},
-     url = {https://github.com/ASTex-ICube/ccvt_cgal}
+     url = {https://github.com/ASTex-ICube/ink-edit}
 }
 
 

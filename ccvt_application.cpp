@@ -1128,7 +1128,7 @@ void ccvt_application::computeProportions() {
         bool found = false;
         for(auto c = histo.begin(); c<histo.end(); ++c)
         {
-            found = abs(pixel[p]-(*c)._r)<0.01 && abs(pixel[p+1]-(*c)._g)<0.01 && abs(pixel[p+2]-(*c)._b)<0.01;
+            found = std::abs(pixel[p]-(*c)._r)<0.01 && std::abs(pixel[p+1]-(*c)._g)<0.01 && std::abs(pixel[p+2]-(*c)._b)<0.01;
             if(found)
             {
                 histo.at(c-histo.begin()).incr();
@@ -1154,7 +1154,7 @@ void ccvt_application::computeProportions() {
     {
         for(auto h = histo.begin(); h<histo.end(); ++h)
         {
-            bool found = abs((*h)._r-(*c)._r)<0.01 && abs((*h)._g-(*c)._g)<0.01 && abs((*h)._b-(*c)._b)<0.01;
+            bool found = std::abs((*h)._r-(*c)._r)<0.01 && std::abs((*h)._g-(*c)._g)<0.01 && std::abs((*h)._b-(*c)._b)<0.01;
             if(found)
             {
                 (*h)._obj+=(*c)._cap;

@@ -156,7 +156,7 @@ SparseMatrix SparseMatrix::multiply(const SparseMatrix& b) const
         for (unsigned j = 0; j < c.numColumns(); ++j) 
         {
             double value = dot(a_i, bt.getRow(j));
-            if (abs(value) > 1e-10) c_i.insert(j, value);
+            if (std::abs(value) > 1e-10) c_i.insert(j, value);
         }
         c.setRow(i, c_i);
     }
