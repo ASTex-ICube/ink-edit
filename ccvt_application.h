@@ -77,12 +77,7 @@ private:
     void terminateGui();
     void updateGui();
     void cellPopup(int id);
-//
-//    void displayPoints();
-//    void updatePoints();
-//
-//    void onMouseButton(int button, int action, int mods);
-//    void onMouseMove(double xpos, double ypos);
+
     void addPoint(float xPos, float yPos, float r, float g, float b);
     void insertPoint(int vecPos, float xPos, float yPos, float r, float g, float b);
     void deletePoint(int id);
@@ -96,22 +91,24 @@ private:
 
     static void saveTexture(unsigned  int fbo_id, int width, int height, const std::string &filename);
     void saveData(const std::string &filename);
-//    void savePPM(const std::string& filename, unsigned int* data, int width, int height);
-
 
     static void computeStatistiques(unsigned int fbo_id, int width, int height, float &mean, float &var);
     static float computeMean(const std::vector<float>& data);
     static float computeSquareMean(const std::vector<float>& data);
     void computeProportions();
-
+    void drawConvertNoise1ToRGB();
+    void drawConvertNoise2ToRGB();
+    void reduceNoiseView();
+    void increaseNoiseView();
+    void changeNoiseView();
 
 
 private:
     int m_width_H = 400;
     int m_height_H = 400;
 
-    int m_width_N = 400;
-    int m_height_N = 400;
+    int m_width_N = 300;
+    int m_height_N = 300;
 
     GLFWwindow* m_window_T = nullptr;
     int m_width_T = 1600;
@@ -126,6 +123,8 @@ private:
 
     unsigned int m_CompositionShaderProgram = 0;
     unsigned int m_CompositionVAO = 0;
+
+    unsigned int m_NoiseInterfConverterProgram = 0;
 
     unsigned int m_fbo_N1 = 0;
     unsigned int m_texture_N1 = 0;
