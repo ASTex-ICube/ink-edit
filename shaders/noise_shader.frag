@@ -7,7 +7,7 @@ uniform float uOprinc;
 uniform float uOspread;
 uniform float uSeed;
 
-out vec4 FragColor;
+out float FragColor;
 
 // CONSTANTE -----------------------------
 const float PI = acos(-1.0);
@@ -77,8 +77,7 @@ void main() {
 
 
     float noise = Gabor_noise(uv, nb_kernel, uFprinc, uFspread, uOprinc, uOspread, uSeed*0.624, size_kernel);
-    noise = 0.5 + 0.155*noise; // *0.155 -> variance de 0.155*0.155 = 0,024025; +0.5 -> moyenne de 0.5
-//    noise = 0.16*noise+0.5;
+    //noise = 0.5 + 0.155*noise; // *0.155 -> variance de 0.155*0.155 = 0,024025; +0.5 -> moyenne de 0.5
 
-    FragColor = vec4(vec3(noise), 1.);
+    FragColor = 0.5 + 0.155*noise;
 }

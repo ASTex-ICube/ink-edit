@@ -2,6 +2,7 @@
 // Created by grenier on 28/05/24.
 //
 
+#define NOMINMAX
 #include "ccvt_application.h"
 #include "timer.h"
 
@@ -21,6 +22,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
+#include <algorithm>
 
 void error_callback(int error, const char* description)
 {
@@ -171,7 +174,8 @@ void shader_program(unsigned int & shaderProgram, std::string frag_shader, std::
 }
 
 
-bool setFBO(unsigned int &fbo, unsigned int &texture, int width, int height){
+
+bool setFBO(unsigned int &fbo, unsigned int &texture, int width, int height, GLenum format, GLenum iformat){
     if (glIsTexture(texture))
         glDeleteTextures(1,&texture);
 
@@ -185,7 +189,7 @@ bool setFBO(unsigned int &fbo, unsigned int &texture, int width, int height){
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, iformat, width, height, 0, format, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -204,48 +208,52 @@ bool setFBO(unsigned int &fbo, unsigned int &texture, int width, int height){
 
 bool ccvt_application::init_noise() {
     // fbo noise 1
-    if (!setFBO(m_fbo_N1, m_texture_N1, m_width_T, m_height_T)) {
+    if (!setFBO(m_fbo_N1, m_texture_N1, m_width_T, m_height_T,GL_RED,GL_R32F)) {
         return false;
     }
     drawNoise(m_fbo_N1, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
     computeStatistiques(m_fbo_N1, m_width_T, m_height_T, m_mean_N1, m_var_N1);
 
 
-    if (!setFBO(m_fbo_N1_ui, m_texture_N1_ui, m_width_N, m_height_N)) {
+    if (!setFBO(m_fbo_N1_ui,m_texture_N1_ui, m_width_N, m_height_N, GL_RGB, GL_RGB8)) {
         return false;
     }
-    drawNoise(m_fbo_N1_ui, m_width_N, m_height_N, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
-
-
+    drawConvertNoise1ToRGB();
 
     // fbo noise 2
-    if (!setFBO(m_fbo_N2, m_texture_N2, m_width_T, m_height_T)) {
+    if (!setFBO(m_fbo_N2, m_texture_N2, m_width_T, m_height_T, GL_RED, GL_R32F)) {
         return false;
     }
     drawNoise(m_fbo_N2, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
     computeStatistiques(m_fbo_N2, m_width_T, m_height_T, m_mean_N2, m_var_N2);
 
-    if (!setFBO(m_fbo_N2_ui, m_texture_N2_ui, m_width_N, m_height_N)) {
+    if (!setFBO(m_fbo_N2_ui, m_texture_N2_ui, m_width_N, m_height_N, GL_RGB, GL_RGB8)) {
         return false;
     }
-    drawNoise(m_fbo_N2_ui, m_width_N, m_height_N, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
+
+    drawConvertNoise2ToRGB();
+ 
 
 
 
     // fbo color map
-    if (!setFBO(m_fbo_H, m_texture_H, m_width_H, m_height_H)) {
+    if (!setFBO(m_fbo_H, m_texture_H, m_width_H, m_height_H, GL_RGB, GL_RGB8)) {
         return false;
     }
 
     // fbo composition
-    if (!setFBO(m_fbo_T, m_texture_T, m_width_T, m_height_T)) {
+    if (!setFBO(m_fbo_T, m_texture_T, m_width_T, m_height_T, GL_RGB, GL_RGB8)) {
         return false;
     }
     computeProportions();
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool ccvt_application::onInit() {
+
+    std::cout << "INFO INTERFACE" << std::endl;
+    std::cout << "O/P keys to reduce/increase voew of noise" << std::endl;
     std::cout<<"Initialisation..."<<std::endl;
     glfwSetErrorCallback(error_callback);
 
@@ -266,7 +274,7 @@ bool ccvt_application::onInit() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
     
 
     // fenêtre résultat
@@ -276,7 +284,28 @@ bool ccvt_application::onInit() {
         {
             ccvt_application* that = static_cast<ccvt_application*>(glfwGetWindowUserPointer(wi));
             glfwGetFramebufferSize(wi, &(that->m_width_T), &(that->m_height_T));
+            that->m_width_N = std::min(that->m_width_T, that->m_height_T) / 3;
+            that->m_height_N = that->m_width_N;
             that->init_noise();
+        });
+
+    glfwSetKeyCallback(m_window_T, [](GLFWwindow* wi, int k, int /*s*/, int a, int m)
+        {
+            ccvt_application* that = static_cast<ccvt_application*>(glfwGetWindowUserPointer(wi));
+   
+            //if (k == GLFW_KEY_ESCAPE)
+            //    exit(0);
+
+            if (a== GLFW_PRESS)
+                switch (k)
+                {
+                case GLFW_KEY_O:
+                    that->reduceNoiseView();
+                    break;
+                case GLFW_KEY_P:
+                    that->increaseNoiseView();;
+                    break;
+                }
         });
 
     shader_program(m_NoiseShaderProgram, TEMPO_PATH+"shaders/noise_shader.frag", TEMPO_PATH+"shaders/identity_shader.vert");
@@ -287,6 +316,8 @@ bool ccvt_application::onInit() {
 
     shader_program(m_CompositionShaderProgram, TEMPO_PATH+"shaders/composition_shader.frag", TEMPO_PATH+"shaders/identity_shader.vert");
     display_quad(m_CompositionVAO);
+
+    shader_program(m_NoiseInterfConverterProgram, TEMPO_PATH + "shaders/grey2color_shader.frag", TEMPO_PATH + "shaders/identity_shader.vert");
 
     init_noise();
 
@@ -327,6 +358,28 @@ bool ccvt_application::isRunning() {
 }
 
 
+void ccvt_application::reduceNoiseView()
+{
+    m_width_N = std::max(m_width_N - 32, 0);
+    m_height_N = m_width_N;
+    changeNoiseView();
+
+}
+
+void ccvt_application::increaseNoiseView()
+{
+    m_width_N = std::min(m_width_N + 32, m_width_T);
+    m_height_N = m_width_N;
+    changeNoiseView();
+}
+
+void ccvt_application::changeNoiseView()
+{
+    setFBO(m_fbo_N1_ui, m_texture_N1_ui, m_width_N, m_height_N, GL_RGB, GL_RGB8);
+    drawConvertNoise1ToRGB();
+    setFBO(m_fbo_N2_ui, m_texture_N2_ui, m_width_N, m_height_N, GL_RGB, GL_RGB8);
+    drawConvertNoise2ToRGB();
+}
 
 
 
@@ -344,8 +397,7 @@ void ccvt_application::onFrame() {
     //////////////////////////////////////
     if(m_n1_changed){
         drawNoise(m_fbo_N1, m_width_T, m_height_T, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
-        drawNoise(m_fbo_N1_ui, m_width_N, m_height_N, m_F1Princ, m_F1Spread, m_Or1Princ, m_Or1Spread, 1.);
-
+        drawConvertNoise1ToRGB();
         m_n1_changed = false;
     }
 
@@ -354,7 +406,7 @@ void ccvt_application::onFrame() {
     //////////////////////////////////////
     if(m_n2_changed){
         drawNoise(m_fbo_N2, m_width_T, m_height_T, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
-        drawNoise(m_fbo_N2_ui, m_width_N, m_height_N, m_F2Princ, m_F2Spread, m_Or2Princ, m_Or2Spread, 2.);
+        drawConvertNoise2ToRGB();
         m_n2_changed = false;
     }
 
@@ -363,16 +415,12 @@ void ccvt_application::onFrame() {
     drawCM();
 
 
-
     // composition
     //////////////////////////////////////
     drawComposition();
 
+
     updateGui();
-
-
-
-
 
     // swap the buffers
     glfwSwapBuffers(m_window_T);
@@ -382,6 +430,33 @@ void ccvt_application::onFrame() {
 }
 
 
+void ccvt_application::drawConvertNoise1ToRGB() {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo_N1_ui);
+    glDisable(GL_DEPTH_TEST);
+    glViewport(0, 0, m_width_N, m_height_N);
+    glUseProgram(m_NoiseInterfConverterProgram);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_texture_N1);
+    glUniform1i(glGetUniformLocation(m_NoiseInterfConverterProgram, "uTex"), 0);
+    glBindVertexArray(m_NoiseVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
+void ccvt_application::drawConvertNoise2ToRGB() {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo_N2_ui);
+    glDisable(GL_DEPTH_TEST);
+    glViewport(0, 0, m_width_N, m_height_N);
+    glUseProgram(m_NoiseInterfConverterProgram);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_texture_N2);
+    glUniform1i(glGetUniformLocation(m_NoiseInterfConverterProgram, "uTex"), 0);
+    glBindVertexArray(m_NoiseVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -390,10 +465,11 @@ void ccvt_application::drawNoise(unsigned int &fbo, float width, float height, f
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     // clear color
-    glClearColor(0.6f, 0.6f, 0.8f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
-    glEnable(GL_DEPTH_TEST);
+    //glClearColor(0.6f, 0.6f, 0.8f, 1.0f);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
+    //glEnable(GL_DEPTH_TEST);
 
+    glDisable(GL_DEPTH_TEST);
     glUseProgram(m_NoiseShaderProgram);
 
     // unifoms
@@ -1004,7 +1080,7 @@ void ccvt_application::optimizeCCVT(){
 
 
 void ccvt_application::updateCCVT(){
-    //std::cout<<"update CCVT..."<<std::endl;
+    std::cout<<"update CCVT..."<<std::endl;
 
     std::vector<Point> points;
     std::vector<double> weights;
